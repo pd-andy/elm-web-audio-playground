@@ -1,17 +1,14 @@
 port module Main exposing (..)
 
+-- Imports ---------------------------------------------------------------------
 import Browser
-import Browser.Events
---
 import Html exposing (..)
 import Html.Attributes
 import Html.Events
---
 import Json.Decode as Decode
 import Json.Encode as Encode
---
 import WebAudio exposing (..)
-import WebAudio.Context exposing (AudioContext)
+import WebAudio.Context as Context exposing (AudioContext)
 import WebAudio.Property as Prop
 
 -- Send the JSON encoded audio graph to javascript
@@ -31,33 +28,37 @@ main =
 --
 type alias Model =
   { context : AudioContext
-  , freq : Float
   }
 
 --
 init : Decode.Value -> (Model, Cmd Msg)
 init context =
-  let
-    model = Model context 0 
-  in
-  ( model, audio model )
+  withCmdNone
+    { context = context
+    }
 
 -- UPDATE ----------------------------------------------------------------------
 --
 type Msg
   = NoOp
-  | MouseMove Float
 
 --
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
     NoOp ->
-      ( model, Cmd.none )
+      withCmdNone model
 
-    MouseMove freq ->
-      { model | freq = freq }
-        |> (\m -> ( m, audio m ))
+
+--
+withCmdNone : Model -> (Model, Cmd Msg)
+withCmdNone model =
+  (model, Cmd.none)
+
+--
+withAudio : Model -> (Model, Cmd Msg)
+withAudio model =
+  (model, audio model)
 
 -- AUDIO -----------------------------------------------------------------------
 -- This audio function combines the steps of creating an audio graph, and then
@@ -65,12 +66,12 @@ update msg model =
 -- two steps up.
 audio : Model -> Cmd Msg
 audio model =
-  updateAudio <| WebAudio.encodeGraph
-    [ osc [ Prop.frequency model.freq ]
-      [ gain [ Prop.gain 0.1 ] 
-        [ dac ]
+  if Context.state model.context == Context.Running then
+    updateAudio <| encodeGraph
+      [
       ]
-    ]
+  else
+    Cmd.none
 
 -- VIEW ------------------------------------------------------------------------
 --
@@ -85,6 +86,5 @@ view model =
 subscriptions : Model -> Sub Msg
 subscriptions model =
   Sub.batch
-    [ Browser.Events.onMouseMove <|
-        Decode.map MouseMove (Decode.field "clientX" Decode.float)
+    [
     ]
