@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "dev": "parcel src/index.html",
-    "build": "parcel build src/index.html"
+    "build": "parcel build src/index.html",
+    "deploy": "parcel build src/index.html --public-url /elm-web-audio-playground && gh-pages -d dist"
   },
   "author": "",
   "license": "MIT",
